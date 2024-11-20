@@ -9,6 +9,10 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  cloud_firestore: ^5.5.0
+  firebase_auth: ^5.3.3
+  firebase_storage: ^12.3.6
+  image_picker: ^1.1.2
 
 dev_dependencies:
   flutter_test:
