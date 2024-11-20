@@ -1,3 +1,4 @@
+import 'package:clone_whatsapp/model/Usuario.dart';
 import 'package:flutter/material.dart';
 
 import 'Cadastro.dart';
@@ -8,7 +9,7 @@ import 'Mensagens.dart';
 
 class RouteGenerator {
 
-  static Route<dynamic> generateRoute(RouteSettings settings){
+  static Route<dynamic>? generateRoute(RouteSettings settings){
 
     final args = settings.arguments;
 
@@ -35,7 +36,7 @@ class RouteGenerator {
         );
       case "/mensagens" :
         return MaterialPageRoute(
-            builder: (_) => Mensagens(args)
+            builder: (_) => Mensagens(args as Usuario)
         );
       default:
         _erroRota();

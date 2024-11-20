@@ -6,6 +6,8 @@ import 'Home.dart';
 import 'model/Usuario.dart';
 
 class Cadastro extends StatefulWidget {
+  const Cadastro({super.key});
+
   @override
   _CadastroState createState() => _CadastroState();
 }
@@ -13,9 +15,9 @@ class Cadastro extends StatefulWidget {
 class _CadastroState extends State<Cadastro> {
 
   //Controladores
-  TextEditingController _controllerNome = TextEditingController(text: "Jamilton Damasceno");
-  TextEditingController _controllerEmail = TextEditingController(text: "jamilton@gmail.com");
-  TextEditingController _controllerSenha = TextEditingController(text: "1234567");
+  final TextEditingController _controllerNome = TextEditingController(text: "Jamilton Damasceno");
+  final TextEditingController _controllerEmail = TextEditingController(text: "jamilton@gmail.com");
+  final TextEditingController _controllerSenha = TextEditingController(text: "1234567");
   String _mensagemErro = "";
 
   _validarCampos(){
@@ -68,23 +70,23 @@ class _CadastroState extends State<Cadastro> {
     FirebaseAuth auth = FirebaseAuth.instance;
 
     auth.createUserWithEmailAndPassword(
-        email: usuario.email,
-        password: usuario.senha
+      email: usuario.email ?? '',
+      password: usuario.senha ?? '',
     ).then((firebaseUser){
 
       //Salvar dados do usuário
-      Firestore db = Firestore.instance;
+      FirebaseFirestore db = FirebaseFirestore.instance;
 
       db.collection("usuarios")
-      .document( firebaseUser.user.uid )
-      .setData( usuario.toMap() );
+      .doc( firebaseUser.user!.uid )
+      .set( usuario.toMap() );
 
       Navigator.pushNamedAndRemoveUntil(
           context, "/home", (_)=>false
       );
 
     }).catchError((error){
-      print("erro app: " + error.toString() );
+      print("erro app: $error" );
       setState(() {
         _mensagemErro = "Erro ao cadastrar usuário, verifique os campos e tente novamente!";
       });
@@ -100,18 +102,18 @@ class _CadastroState extends State<Cadastro> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text("Cadastro"),
+        title: const Text("Cadastro"),
       ),
       body: Container(
-        decoration: BoxDecoration(color: Color(0xff075E54)),
-        padding: EdgeInsets.all(16),
+        decoration: const BoxDecoration(color: Color(0xff075E54)),
+        padding: const EdgeInsets.all(16),
         child: Center(
           child: SingleChildScrollView(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: <Widget>[
                 Padding(
-                  padding: EdgeInsets.only(bottom: 32),
+                  padding: const EdgeInsets.only(bottom: 32),
                   child: Image.asset(
                     "imagens/usuario.png",
                     width: 200,
@@ -119,14 +121,14 @@ class _CadastroState extends State<Cadastro> {
                   ),
                 ),
                 Padding(
-                  padding: EdgeInsets.only(bottom: 8),
+                  padding: const EdgeInsets.only(bottom: 8),
                   child: TextField(
                     controller: _controllerNome,
                     autofocus: true,
                     keyboardType: TextInputType.text,
-                    style: TextStyle(fontSize: 20),
+                    style: const TextStyle(fontSize: 20),
                     decoration: InputDecoration(
-                        contentPadding: EdgeInsets.fromLTRB(32, 16, 32, 16),
+                        contentPadding: const EdgeInsets.fromLTRB(32, 16, 32, 16),
                         hintText: "Nome",
                         filled: true,
                         fillColor: Colors.white,
@@ -135,13 +137,13 @@ class _CadastroState extends State<Cadastro> {
                   ),
                 ),
                 Padding(
-                  padding: EdgeInsets.only(bottom: 8),
+                  padding: const EdgeInsets.only(bottom: 8),
                   child: TextField(
                     controller: _controllerEmail,
                     keyboardType: TextInputType.emailAddress,
-                    style: TextStyle(fontSize: 20),
+                    style: const TextStyle(fontSize: 20),
                     decoration: InputDecoration(
-                        contentPadding: EdgeInsets.fromLTRB(32, 16, 32, 16),
+                        contentPadding: const EdgeInsets.fromLTRB(32, 16, 32, 16),
                         hintText: "E-mail",
                         filled: true,
                         fillColor: Colors.white,
@@ -153,9 +155,9 @@ class _CadastroState extends State<Cadastro> {
                   controller: _controllerSenha,
                   obscureText: true,
                   keyboardType: TextInputType.text,
-                  style: TextStyle(fontSize: 20),
+                  style: const TextStyle(fontSize: 20),
                   decoration: InputDecoration(
-                      contentPadding: EdgeInsets.fromLTRB(32, 16, 32, 16),
+                      contentPadding: const EdgeInsets.fromLTRB(32, 16, 32, 16),
                       hintText: "Senha",
                       filled: true,
                       fillColor: Colors.white,
@@ -163,25 +165,28 @@ class _CadastroState extends State<Cadastro> {
                           borderRadius: BorderRadius.circular(32))),
                 ),
                 Padding(
-                  padding: EdgeInsets.only(top: 16, bottom: 10),
-                  child: RaisedButton(
-                      child: Text(
-                        "Cadastrar",
-                        style: TextStyle(color: Colors.white, fontSize: 20),
-                      ),
-                      color: Colors.green,
-                      padding: EdgeInsets.fromLTRB(32, 16, 32, 16),
+                  padding: const EdgeInsets.only(top: 16, bottom: 10),
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.green, 
+                      padding: const EdgeInsets.fromLTRB(32, 16, 32, 16),
                       shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(32)),
-                      onPressed: () {
-                        _validarCampos();
-                      }
+                        borderRadius: BorderRadius.circular(32),
                       ),
+                    ),
+                    onPressed: () {
+                      _validarCampos();
+                    },
+                    child: const Text(
+                      "Cadastrar",
+                      style: TextStyle(color: Colors.white, fontSize: 20),
+                    ),
+                  ),
                 ),
                 Center(
                   child: Text(
                     _mensagemErro,
-                    style: TextStyle(
+                    style: const TextStyle(
                         color: Colors.red,
                         fontSize: 20
                     ),

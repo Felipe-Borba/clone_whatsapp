@@ -6,74 +6,76 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'dart:io';
 
 class Configuracoes extends StatefulWidget {
+  const Configuracoes({super.key});
+
   @override
   _ConfiguracoesState createState() => _ConfiguracoesState();
 }
 
 class _ConfiguracoesState extends State<Configuracoes> {
 
-  TextEditingController _controllerNome = TextEditingController();
-  File _imagem;
-  String _idUsuarioLogado;
+  final TextEditingController _controllerNome = TextEditingController();
+  XFile? _imagem;
+  String? _idUsuarioLogado;
   bool _subindoImagem = false;
-  String _urlImagemRecuperada;
+  String? _urlImagemRecuperada;
 
   Future _recuperarImagem(String origemImagem) async {
 
-    File imagemSelecionada;
+    final ImagePicker picker = ImagePicker();
+    XFile? imagemSelecionada;
     switch( origemImagem ){
       case "camera" :
-        imagemSelecionada = await ImagePicker.pickImage(source: ImageSource.camera);
+        imagemSelecionada = await picker.pickImage(source: ImageSource.camera);
         break;
       case "galeria" :
-        imagemSelecionada = await ImagePicker.pickImage(source: ImageSource.gallery);
+        imagemSelecionada = await picker.pickImage(source: ImageSource.gallery);
         break;
     }
 
     setState(() {
       _imagem = imagemSelecionada;
-      if( _imagem != null ){
-        _subindoImagem = true;
-        _uploadImagem();
-      }
-    });
+      _subindoImagem = true;
+      _uploadImagem();
+        });
 
   }
 
   Future _uploadImagem() async {
 
     FirebaseStorage storage = FirebaseStorage.instance;
-    StorageReference pastaRaiz = storage.ref();
-    StorageReference arquivo = pastaRaiz
+    Reference pastaRaiz = storage.ref();
+    Reference arquivo = pastaRaiz
       .child("perfil")
-      .child(_idUsuarioLogado + ".jpg");
+      .child("$_idUsuarioLogado.jpg");
 
     //Upload da imagem
-    StorageUploadTask task = arquivo.putFile(_imagem);
+    UploadTask task = arquivo.putFile(File(_imagem!.path));
 
     //Controlar progresso do upload
-    task.events.listen((StorageTaskEvent storageEvent){
-
-      if( storageEvent.type == StorageTaskEventType.progress ){
-        setState(() {
-          _subindoImagem = true;
-        });
-      }else if( storageEvent.type == StorageTaskEventType.success ){
-        setState(() {
-          _subindoImagem = false;
-        });
+    task.snapshotEvents.listen((TaskSnapshot snapshot) {
+      switch (snapshot.state) {
+        case TaskState.running:
+          setState(() {
+            _subindoImagem = true;
+          });
+          break;
+        case TaskState.success:
+          setState(() {
+            _subindoImagem = false;
+          });
+          break;
+        default:
+          break;
       }
-
     });
 
     //Recuperar url da imagem
-    task.onComplete.then((StorageTaskSnapshot snapshot){
-      _recuperarUrlImagem(snapshot);
-    });
-
+    TaskSnapshot taskSnapshot = await task;
+    _recuperarUrlImagem(taskSnapshot);
   }
 
-  Future _recuperarUrlImagem(StorageTaskSnapshot snapshot) async {
+  Future _recuperarUrlImagem(TaskSnapshot snapshot) async {
 
     String url = await snapshot.ref.getDownloadURL();
     _atualizarUrlImagemFirestore( url );
@@ -87,44 +89,44 @@ class _ConfiguracoesState extends State<Configuracoes> {
   _atualizarNomeFirestore(){
 
     String nome = _controllerNome.text;
-    Firestore db = Firestore.instance;
+    FirebaseFirestore db = FirebaseFirestore.instance;
 
     Map<String, dynamic> dadosAtualizar = {
       "nome" : nome
     };
 
     db.collection("usuarios")
-        .document(_idUsuarioLogado)
-        .updateData( dadosAtualizar );
+        .doc(_idUsuarioLogado)
+        .update( dadosAtualizar );
 
   }
 
   _atualizarUrlImagemFirestore(String url){
 
-    Firestore db = Firestore.instance;
+    FirebaseFirestore db = FirebaseFirestore.instance;
 
     Map<String, dynamic> dadosAtualizar = {
       "urlImagem" : url
     };
     
     db.collection("usuarios")
-    .document(_idUsuarioLogado)
-    .updateData( dadosAtualizar );
+    .doc(_idUsuarioLogado)
+    .update( dadosAtualizar );
 
   }
 
   _recuperarDadosUsuario() async {
 
     FirebaseAuth auth = FirebaseAuth.instance;
-    FirebaseUser usuarioLogado = await auth.currentUser();
+    User usuarioLogado =  auth.currentUser!;
     _idUsuarioLogado = usuarioLogado.uid;
 
-    Firestore db = Firestore.instance;
+    FirebaseFirestore db = FirebaseFirestore.instance;
     DocumentSnapshot snapshot = await db.collection("usuarios")
-      .document( _idUsuarioLogado )
+      .doc( _idUsuarioLogado )
       .get();
 
-    Map<String, dynamic> dados = snapshot.data;
+    Map<String, dynamic> dados = snapshot.data() as Map<String, dynamic>;
     _controllerNome.text = dados["nome"];
 
     if( dados["urlImagem"] != null ){
@@ -142,17 +144,17 @@ class _ConfiguracoesState extends State<Configuracoes> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text("Configurações"),),
+      appBar: AppBar(title: const Text("Configurações"),),
       body: Container(
-        padding: EdgeInsets.all(16),
+        padding: const EdgeInsets.all(16),
         child: Center(
           child: SingleChildScrollView(
             child: Column(
               children: <Widget>[
                 Container(
-                  padding: EdgeInsets.all(16),
+                  padding: const EdgeInsets.all(16),
                   child: _subindoImagem
-                      ? CircularProgressIndicator()
+                      ? const CircularProgressIndicator()
                       : Container(),
                 ),
                 CircleAvatar(
@@ -160,20 +162,20 @@ class _ConfiguracoesState extends State<Configuracoes> {
                   backgroundColor: Colors.grey,
                   backgroundImage:
                   _urlImagemRecuperada != null
-                      ? NetworkImage(_urlImagemRecuperada)
+                      ? NetworkImage(_urlImagemRecuperada!)
                       : null
                 ),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: <Widget>[
-                    FlatButton(
-                      child: Text("Câmera"),
+                    TextButton(
+                      child: const Text("Câmera"),
                       onPressed: (){
                         _recuperarImagem("camera");
                       },
                     ),
-                    FlatButton(
-                      child: Text("Galeria"),
+                    TextButton(
+                      child: const Text("Galeria"),
                       onPressed: (){
                         _recuperarImagem("galeria");
                       },
@@ -181,17 +183,17 @@ class _ConfiguracoesState extends State<Configuracoes> {
                   ],
                 ),
                 Padding(
-                  padding: EdgeInsets.only(bottom: 8),
+                  padding: const EdgeInsets.only(bottom: 8),
                   child: TextField(
                     controller: _controllerNome,
                     autofocus: true,
                     keyboardType: TextInputType.text,
-                    style: TextStyle(fontSize: 20),
+                    style: const TextStyle(fontSize: 20),
                     /*onChanged: (texto){
                       _atualizarNomeFirestore(texto);
                     },*/
                     decoration: InputDecoration(
-                        contentPadding: EdgeInsets.fromLTRB(32, 16, 32, 16),
+                        contentPadding: const EdgeInsets.fromLTRB(32, 16, 32, 16),
                         hintText: "Nome",
                         filled: true,
                         fillColor: Colors.white,
@@ -200,19 +202,22 @@ class _ConfiguracoesState extends State<Configuracoes> {
                   ),
                 ),
                 Padding(
-                  padding: EdgeInsets.only(top: 16, bottom: 10),
-                  child: RaisedButton(
-                      child: Text(
+                  padding: const EdgeInsets.only(top: 16, bottom: 10),
+                  child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.green,
+                        padding: const EdgeInsets.fromLTRB(32, 16, 32, 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(32),
+                        ),
+                      ),
+                      onPressed: () {
+                        _atualizarNomeFirestore();
+                      },
+                      child: const Text(
                         "Salvar",
                         style: TextStyle(color: Colors.white, fontSize: 20),
                       ),
-                      color: Colors.green,
-                      padding: EdgeInsets.fromLTRB(32, 16, 32, 16),
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(32)),
-                      onPressed: () {
-                        _atualizarNomeFirestore();
-                      }
                   ),
                 )
               ],
