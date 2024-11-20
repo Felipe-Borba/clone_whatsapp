@@ -20,6 +20,8 @@ class _LoginState extends State<Login> {
       TextEditingController(text: "1234567");
   String _mensagemErro = "";
 
+  final FirebaseAuth auth = FirebaseAuth.instance;
+
   _validarCampos() {
     //Recupera dados dos campos
     String email = _controllerEmail.text;
@@ -68,7 +70,6 @@ class _LoginState extends State<Login> {
   }
 
   Future _verificarUsuarioLogado() async {
-    FirebaseAuth auth = FirebaseAuth.instance;
     //auth.signOut();
 
     var usuarioLogado = auth.currentUser;
